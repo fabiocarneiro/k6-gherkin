@@ -31,7 +31,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Configure Git User
         run: |
@@ -75,8 +74,8 @@ jobs:
       - name: Build package
         run: npm run build --if-present
 
-      - name: Publish to npm
-        run: npm publish --access public
+      - name: Publish to npm with OIDC Provenance
+        run: npm publish --access public --provenance
 
       - name: Set up GitHub Packages Registry
         uses: actions/setup-node@v4
