@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -36,18 +38,26 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Bump version in package.json
+      - name: Determine release version
         id: bump
         run: |
-          npm version ${{ inputs.bump_type }} --no-git-tag-version
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          TAG_COUNT=$(git tag -l "v*" | wc -l)
+          if [ "$TAG_COUNT" -eq 0 ]; then
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "First release detected! Releasing initial version $CURRENT_VERSION."
+            echo "VERSION=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            npm version ${{ inputs.bump_type }} --no-git-tag-version
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "Bumping version (${{ inputs.bump_type }}) to $NEW_VERSION."
+            echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit version bump and tag
         run: |
           VERSION="${{ steps.bump.outputs.VERSION }}"
           git add package.json package-lock.json 2>/dev/null || git add package.json
-          git commit -m "chore: release v${VERSION}"
+          git commit -m "chore: release v${VERSION}" || true
           git tag "v${VERSION}"
           git push origin master
           git push origin "v${VERSION}"
