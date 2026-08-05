@@ -55,7 +55,7 @@ function generateScript(scenarios, resources, options = {}) {
     const stepsDir = options.stepsDir ? path.resolve(options.stepsDir) : null;
     const imports = stepsDir ? discoverStepImports(stepsDir) : [];
     const importLines = imports
-        .map(({ absPath, exportName }) => `import ${exportName} from '${absPath}';`)
+        .map(({ absPath, exportName }) => `import * as ${exportName}Module from '${absPath}';\nconst ${exportName} = ${exportName}Module.default || ${exportName}Module.${exportName} || ${exportName}Module.steps || [];`)
         .join('\n');
     const stepDefArray = imports.map(({ exportName }) => `...${exportName}`).join(', ');
     const setupHeader = options.setupHeader || '';
