@@ -16,7 +16,6 @@ on:
 permissions:
   contents: write
   id-token: write
-  packages: write
 
 jobs:
   release-and-publish:
@@ -79,14 +78,3 @@ jobs:
         run: npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Set up GitHub Packages Registry
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          registry-url: 'https://npm.pkg.github.com'
-
-      - name: Publish to GitHub Packages
-        run: npm publish --registry=https://npm.pkg.github.com
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
