@@ -1,0 +1,33 @@
+{
+  "name": "k6-gherkin",
+  "version": "0.0.1",
+  "description": "Unopinionated Gherkin BDD test runner and summary reporter for k6",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "bin": {
+    "k6-gherkin": "bin/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabiocarneiro/k6-gherkin.git"
+  },
+  "keywords": [
+    "k6",
+    "gherkin",
+    "cucumber",
+    "bdd",
+    "testing",
+    "performance-testing",
+    "regression-testing"
+  ],
+  "author": "Fabio Carneiro",
+  "license": "MIT",
+  "dependencies": {
+    "@cucumber/gherkin": "^29.0.0",
+    "@cucumber/messages": "^27.0.0"
+  },
+  "devDependencies": {
+    "@types/k6": "*",
+    "typescript": "^5.0.0"
+  }
+}
