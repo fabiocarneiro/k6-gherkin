@@ -26,35 +26,35 @@ npm install k6-gherkin
 
 ## Usage Example
 
-### 1. Define your Feature (`features/portfolio.feature`)
+### 1. Define your Feature (`features/shopping-cart.feature`)
 
 ```gherkin
-Feature: Portfolio Management
-  Scenario: Create portfolio and record transaction
-    Given a signed-in user
-    When the user creates a portfolio named "Long Term Tech"
-    Then the portfolio should appear in the portfolio list
+Feature: Shopping Cart
+  Scenario: Add item to cart
+    Given an authenticated user
+    When the user adds "Wireless Headphones" to their shopping cart
+    Then the shopping cart should contain 1 item
 ```
 
-### 2. Write Step Definitions (`steps/portfolio-steps.ts`)
+### 2. Write Step Definitions (`steps/cart-steps.ts`)
 
 ```typescript
 import { createRegistry, StepContext } from 'k6-gherkin';
 
 const { Given, When, Then, steps } = createRegistry();
 
-Given(/^a signed-in user$/, async (ctx: StepContext) => {
-  ctx.idToken = 'mock-user-token';
+Given(/^an authenticated user$/, async (ctx: StepContext) => {
+  ctx.userToken = 'auth-token-123';
 });
 
-When(/^the user creates a portfolio named "([^"]+)"$/, async (ctx: StepContext, name: string) => {
-  // Execute API or gRPC request with k6
-  ctx.portfolioName = name;
+When(/^the user adds "([^"]+)" to their shopping cart$/, async (ctx: StepContext, item: string) => {
+  // Execute HTTP or gRPC request using k6
+  ctx.cartItems = [item];
 });
 
-Then(/^the portfolio should appear in the portfolio list$/, async (ctx: StepContext) => {
-  ctx.check(ctx.portfolioName, {
-    'portfolio exists': (val) => val === 'Long Term Tech',
+Then(/^the shopping cart should contain 1 item$/, async (ctx: StepContext) => {
+  ctx.check(ctx.cartItems, {
+    'cart has item': (items) => items && items.length === 1,
   });
 });
 
@@ -79,12 +79,12 @@ runK6({
 When executed, k6 check results are formatted directly in the console output:
 
 ```text
-Feature: Portfolio Management
+Feature: Shopping Cart
 
-  Scenario: Create portfolio and record transaction
-    ✓ Given a signed-in user
-    ✓ When the user creates a portfolio named "Long Term Tech"
-    ✓ Then the portfolio should appear in the portfolio list
+  Scenario: Add item to cart
+    ✓ Given an authenticated user
+    ✓ When the user adds "Wireless Headphones" to their shopping cart
+    ✓ Then the shopping cart should contain 1 item
 
 ────────────────────────────────────────────────────────────
 ✓ 3 checks: 3 passed
