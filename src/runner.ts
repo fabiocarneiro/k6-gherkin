@@ -1,9 +1,16 @@
-const { spawn } = require('child_process');
-const path = require('path');
-const { parseFeatures } = require('./parser');
-const { generateScript } = require('./generator');
+import { spawn } from 'child_process';
+import * as path from 'path';
+import { parseFeatures } from './parser';
+import { generateScript, GeneratorOptions } from './generator';
 
-function runK6(options = {}) {
+export interface RunK6Options extends GeneratorOptions {
+  featuresDir?: string;
+  resources?: Record<string, any[]>;
+  k6Args?: string[];
+  cwd?: string;
+}
+
+export function runK6(options: RunK6Options = {}): void {
   const featuresDir = options.featuresDir ? path.resolve(options.featuresDir) : path.resolve(process.cwd(), 'features');
   const scenarios = parseFeatures(featuresDir);
   const resources = options.resources || {};
@@ -21,14 +28,12 @@ function runK6(options = {}) {
   k6.stdin.write(script);
   k6.stdin.end();
 
-  k6.on('error', (err) => {
+  k6.on('error', (err: Error) => {
     console.error('[k6-gherkin] Failed to start k6:', err.message);
     process.exit(1);
   });
 
-  k6.on('exit', (code) => {
+  k6.on('exit', (code: number | null) => {
     process.exit(code ?? 0);
   });
 }
-
-module.exports = { runK6 };

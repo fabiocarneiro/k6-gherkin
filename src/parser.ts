@@ -1,36 +1,48 @@
-const { Parser, AstBuilder, GherkinClassicTokenMatcher, compile } = require('@cucumber/gherkin');
-const fs = require('fs');
-const path = require('path');
+import { Parser, AstBuilder, GherkinClassicTokenMatcher, compile } from '@cucumber/gherkin';
+import * as fs from 'fs';
+import * as path from 'path';
 
-function parseFeatures(dir) {
+export interface ScenarioStep {
+  text: string;
+  keyword: string;
+  dataTable: string[][] | null;
+}
+
+export interface Scenario {
+  featureName: string;
+  name: string;
+  steps: ScenarioStep[];
+}
+
+export function parseFeatures(dir: string): Scenario[] {
   const idGen = (() => { let n = 0; return () => `id-${++n}`; })();
   const parser = new Parser(new AstBuilder(idGen), new GherkinClassicTokenMatcher());
 
-  const scenarios = [];
+  const scenarios: Scenario[] = [];
   if (!fs.existsSync(dir)) return scenarios;
 
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.feature')).sort();
   for (const file of files) {
     const src = fs.readFileSync(path.join(dir, file), 'utf8');
     const doc = parser.parse(src);
-    const featureName = doc.feature && doc.feature.name;
+    const featureName = (doc.feature && doc.feature.name) || 'Unknown Feature';
 
-    const stepKeywords = {};
+    const stepKeywords: Record<string, string> = {};
     for (const child of (doc.feature && doc.feature.children) || []) {
-      const block = child.scenario || child.background;
+      const block = (child as any).scenario || (child as any).background;
       if (!block) continue;
       for (const step of block.steps || []) {
         stepKeywords[step.id] = step.keyword.trim();
       }
     }
 
-    const dataTables = {};
-    const traverse = (node) => {
+    const dataTables: Record<string, string[][]> = {};
+    const traverse = (node: any) => {
       if (!node) return;
       if (node.steps) {
         for (const s of node.steps) {
           if (s.dataTable) {
-            dataTables[s.id] = s.dataTable.rows.map(row => row.cells.map(cell => cell.value));
+            dataTables[s.id] = s.dataTable.rows.map((row: any) => row.cells.map((cell: any) => cell.value));
           }
         }
       }
@@ -57,5 +69,3 @@ function parseFeatures(dir) {
   }
   return scenarios;
 }
-
-module.exports = { parseFeatures };

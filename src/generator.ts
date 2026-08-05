@@ -1,7 +1,17 @@
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
+import { Scenario } from './parser';
 
-function discoverStepImports(stepsDir) {
+export interface GeneratorOptions {
+  stepsDir?: string;
+  setupHeader?: string;
+  beforeScenario?: string;
+  afterScenario?: string;
+  getScenarioContext?: string;
+  thresholds?: string[];
+}
+
+export function discoverStepImports(stepsDir: string): { absPath: string; exportName: string }[] {
   if (!fs.existsSync(stepsDir)) return [];
   return fs.readdirSync(stepsDir)
     .filter(f => f.endsWith('.ts') || f.endsWith('.js'))
@@ -13,7 +23,7 @@ function discoverStepImports(stepsDir) {
     });
 }
 
-function generateScript(scenarios, resources, options = {}) {
+export function generateScript(scenarios: Scenario[], resources: Record<string, any[]>, options: GeneratorOptions = {}): string {
   const runnerPath = path.join(__dirname, 'step-runner.js');
   const summaryPath = path.join(__dirname, 'handle-summary.js');
 
@@ -32,11 +42,11 @@ function generateScript(scenarios, resources, options = {}) {
   const getScenarioContext = options.getScenarioContext || 'return {};';
   const thresholds = options.thresholds || ["checks: ['rate > 0.98']"];
 
-  const byFeature = new Map();
+  const byFeature = new Map<string, Scenario[]>();
   for (const scenario of scenarios) {
     const key = scenario.featureName || 'Unknown Feature';
     if (!byFeature.has(key)) byFeature.set(key, []);
-    byFeature.get(key).push(scenario);
+    byFeature.get(key)!.push(scenario);
   }
 
   const featureBlocks = Array.from(byFeature.entries()).map(([featureName, featureScenarios]) => {
@@ -100,5 +110,3 @@ ${featureBlocks}
 }
 `.trimStart();
 }
-
-module.exports = { generateScript };

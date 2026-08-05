@@ -2,12 +2,12 @@
  * Formats the k6 check results as a Gherkin-style summary tree.
  */
 
-export function handleSummary(data) {
+export function handleSummary(data: any): { stdout: string } {
   const allChecks = (data.root_group && data.root_group.checks) || [];
   const SEP = ' | ';
 
-  const featureOrder = [];
-  const featureMap = {};
+  const featureOrder: string[] = [];
+  const featureMap: Record<string, Record<string, Record<string, { passes: number; fails: number }>>> = {};
 
   for (const c of allChecks) {
     const i1 = c.name.indexOf(SEP);
@@ -60,7 +60,7 @@ export function handleSummary(data) {
     out += '\n';
     if (cm.thresholds) {
       for (const [thr, result] of Object.entries(cm.thresholds)) {
-        out += (result.ok ? '\u2713 ' : '\u2717 ') + 'threshold: checks ' + thr + '\n';
+        out += ((result as any).ok ? '\u2713 ' : '\u2717 ') + 'threshold: checks ' + thr + '\n';
       }
     }
   }

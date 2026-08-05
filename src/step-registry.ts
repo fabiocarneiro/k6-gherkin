@@ -20,7 +20,16 @@ export interface StepDef {
   fn: StepFn;
 }
 
-export function createRegistry() {
+export interface StepRegistry {
+  Given: (pattern: RegExp, fn: StepFn) => void;
+  When: (pattern: RegExp, fn: StepFn) => void;
+  Then: (pattern: RegExp, fn: StepFn) => void;
+  And: (pattern: RegExp, fn: StepFn) => void;
+  But: (pattern: RegExp, fn: StepFn) => void;
+  steps: StepDef[];
+}
+
+export function createRegistry(): StepRegistry {
   const steps: StepDef[] = [];
   const reg = (pattern: RegExp, fn: StepFn) => steps.push({ pattern, fn });
   return {
