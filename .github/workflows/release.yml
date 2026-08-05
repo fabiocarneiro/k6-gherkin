@@ -1,49 +1,77 @@
 name: Release & Publish
 
 on:
-  push:
-    branches:
-      - master
-      - main
   workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version Bump Type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
-  id-token: write
   contents: write
-  pull-requests: write
+  id-token: write
   packages: write
 
 jobs:
-  release-please:
+  release-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
-        id: release
-        with:
-          release-type: node
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/checkout@v4
-        if: ${{ steps.release.outputs.release_created }}
-
-      - uses: actions/setup-node@v4
-        if: ${{ steps.release.outputs.release_created }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
-      - run: npm ci
-        if: ${{ steps.release.outputs.release_created }}
+      - name: Configure Git User
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - run: npm publish --access public --provenance
-        if: ${{ steps.release.outputs.release_created }}
+      - name: Bump version in package.json
+        id: bump
+        run: |
+          npm version ${{ inputs.bump_type }} --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-node@v4
-        if: ${{ steps.release.outputs.release_created }}
+      - name: Commit version bump and tag
+        run: |
+          VERSION="${{ steps.bump.outputs.VERSION }}"
+          git add package.json package-lock.json 2>/dev/null || git add package.json
+          git commit -m "chore: release v${VERSION}"
+          git tag "v${VERSION}"
+          git push origin master
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.bump.outputs.VERSION }}"
+          gh release create "v${VERSION}" --title "v${VERSION}" --generate-notes
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish to npm with OIDC Provenance
+        run: npm publish --access public --provenance
+
+      - name: Set up GitHub Packages Registry
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
 
-      - run: npm publish
-        if: ${{ steps.release.outputs.release_created }}
+      - name: Publish to GitHub Packages
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
