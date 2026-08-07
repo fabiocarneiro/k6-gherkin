@@ -62,5 +62,9 @@ function handleSummary(data) {
             }
         }
     }
-    return { stdout: out };
+    const result = { stdout: out };
+    if (typeof __ENV !== 'undefined' && __ENV.SUMMARY_EXPORT) {
+        result[__ENV.SUMMARY_EXPORT] = JSON.stringify(data);
+    }
+    return result;
 }

@@ -2,7 +2,7 @@
  * Formats the k6 check results as a Gherkin-style summary tree.
  */
 
-export function handleSummary(data: any): { stdout: string } {
+export function handleSummary(data: any): Record<string, string> {
   const allChecks = (data.root_group && data.root_group.checks) || [];
   const SEP = ' | ';
 
@@ -65,5 +65,9 @@ export function handleSummary(data: any): { stdout: string } {
     }
   }
 
-  return { stdout: out };
+  const result: Record<string, string> = { stdout: out };
+  if (typeof __ENV !== 'undefined' && __ENV.SUMMARY_EXPORT) {
+    result[__ENV.SUMMARY_EXPORT] = JSON.stringify(data);
+  }
+  return result;
 }
