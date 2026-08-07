@@ -66,8 +66,7 @@ export function handleSummary(data: any): Record<string, string> {
   }
 
   const result: Record<string, string> = { stdout: out };
-  if (typeof __ENV !== 'undefined' && __ENV.SUMMARY_EXPORT) {
-    result[__ENV.SUMMARY_EXPORT] = JSON.stringify(data);
-  }
+  const summaryFile = (typeof __ENV !== 'undefined' && (__ENV.SUMMARY_EXPORT || __ENV.K6_SUMMARY_EXPORT)) || 'summary.json';
+  result[summaryFile] = JSON.stringify(data);
   return result;
 }
