@@ -59,10 +59,14 @@ export function parseFeatures(dir: string): Scenario[] {
       scenarios.push({
         featureName,
         name: pickle.name,
+        // For a plain Scenario, a pickle step has exactly one astNodeId (the step itself).
+        // For a Scenario Outline, it has two: the step's own id and the Examples row's id that
+        // generated this pickle. Which one comes last is not guaranteed, so we look up against
+        // every id and take whichever one actually resolves, rather than assuming position.
         steps: pickle.steps.map(s => ({
           text: s.text,
-          keyword: stepKeywords[s.astNodeIds && s.astNodeIds[s.astNodeIds.length - 1]] || '',
-          dataTable: dataTables[s.astNodeIds && s.astNodeIds[s.astNodeIds.length - 1]] || null,
+          keyword: (s.astNodeIds && s.astNodeIds.map((id) => stepKeywords[id]).find((k) => k)) || '',
+          dataTable: (s.astNodeIds && s.astNodeIds.map((id) => dataTables[id]).find((t) => t)) || null,
         })),
       });
     }
