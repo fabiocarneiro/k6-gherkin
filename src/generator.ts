@@ -26,15 +26,24 @@ export function discoverStepImports(stepsDir: string): { absPath: string; export
 export function generateScript(scenarios: Scenario[], resources: Record<string, any[]>, options: GeneratorOptions = {}): string {
   const runnerPath = path.join(__dirname, 'step-runner.js');
   const summaryPath = path.join(__dirname, 'handle-summary.js');
+  const registryPath = path.join(__dirname, 'step-registry.js');
 
   const stepsDir = options.stepsDir ? path.resolve(options.stepsDir) : null;
   const imports = stepsDir ? discoverStepImports(stepsDir) : [];
 
+  // Each step file exports a single factory function — `export default (Given, When, Then,
+  // And, But) => { ... }` — rather than building its own registry. k6 only resolves relative
+  // or absolute file paths (never bare `node_modules` specifiers), so a step file has no way to
+  // reach back into this package's own registry at runtime; injecting Given/When/Then as plain
+  // arguments into one registry shared across all step files sidesteps that entirely — step
+  // files need no k6-gherkin import of any kind to register steps.
   const importLines = imports
-    .map(({ absPath, exportName }) => `import * as ${exportName}Module from '${absPath}';\nconst ${exportName} = ${exportName}Module.default || ${exportName}Module.${exportName} || ${exportName}Module.steps || [];`)
+    .map(({ absPath, exportName }) => `import ${exportName} from '${absPath}';`)
     .join('\n');
 
-  const stepDefArray = imports.map(({ exportName }) => `...${exportName}`).join(', ');
+  const registerLines = imports
+    .map(({ exportName }) => `${exportName}(Given, When, Then, And, But);`)
+    .join('\n');
 
   const setupHeader = options.setupHeader || '';
   const beforeScenario = options.beforeScenario || '';
@@ -72,6 +81,7 @@ export function generateScript(scenarios: Scenario[], resources: Record<string, 
 
   return `
 import { check as k6check } from 'k6';
+import { createRegistry } from '${registryPath}';
 ${importLines}
 import { runScenario } from '${runnerPath}';
 import { handleSummary } from '${summaryPath}';
@@ -79,7 +89,8 @@ ${setupHeader}
 
 export { handleSummary };
 
-const allStepDefs = [${stepDefArray}];
+const { Given, When, Then, And, But, steps: allStepDefs } = createRegistry();
+${registerLines}
 const __resources = ${resourcesJson};
 
 export const options = {

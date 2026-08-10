@@ -49,26 +49,29 @@ Feature: Shopping Cart
 ### 2. Write Step Definitions (`steps/cart-steps.ts`)
 
 ```typescript
-import { createRegistry, StepContext } from 'k6-gherkin';
+import type { Given, When, Then, StepContext } from 'k6-gherkin';
 
-const { Given, When, Then, steps } = createRegistry();
-
-Given(/^an authenticated user$/, async (ctx: StepContext) => {
-  ctx.userToken = 'auth-token-123';
-});
-
-When(/^the user adds "([^"]+)" to their shopping cart$/, async (ctx: StepContext, item: string) => {
-  // Execute HTTP or gRPC request using k6
-  ctx.cartItems = [item];
-});
-
-Then(/^the shopping cart should contain 1 item$/, async (ctx: StepContext) => {
-  ctx.check(ctx.cartItems, {
-    'cart has item': (items) => items && items.length === 1,
+// A step file exports one factory function; k6-gherkin calls it with a Given/When/Then/And/But
+// shared across all step files in stepsDir. Nothing is imported from 'k6-gherkin' at runtime —
+// only `import type`, which is erased before k6 ever tries to resolve it — so step files have
+// zero runtime dependency on this package, matching k6's own module loader (relative/absolute
+// file paths and remote URLs only, no node_modules resolution).
+export default function (Given: Given, When: When, Then: Then) {
+  Given(/^an authenticated user$/, async (ctx: StepContext) => {
+    ctx.userToken = 'auth-token-123';
   });
-});
 
-export default steps;
+  When(/^the user adds "([^"]+)" to their shopping cart$/, async (ctx: StepContext, item: string) => {
+    // Execute HTTP or gRPC request using k6
+    ctx.cartItems = [item];
+  });
+
+  Then(/^the shopping cart should contain 1 item$/, async (ctx: StepContext) => {
+    ctx.check(ctx.cartItems, {
+      'cart has item': (items) => items && items.length === 1,
+    });
+  });
+}
 ```
 
 ### 3. Run with `k6-gherkin`

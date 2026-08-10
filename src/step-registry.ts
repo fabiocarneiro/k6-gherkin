@@ -20,14 +20,32 @@ export interface StepDef {
   fn: StepFn;
 }
 
+export type RegisterFn = (pattern: RegExp, fn: StepFn) => void;
+
+// Individual aliases (rather than one shared RegisterFn everywhere) so a step file's factory
+// signature reads as self-documenting keyword-by-keyword types:
+//   export default function (Given: Given, When: When, Then: Then) { ... }
+export type Given = RegisterFn;
+export type When = RegisterFn;
+export type Then = RegisterFn;
+export type And = RegisterFn;
+export type But = RegisterFn;
+
 export interface StepRegistry {
-  Given: (pattern: RegExp, fn: StepFn) => void;
-  When: (pattern: RegExp, fn: StepFn) => void;
-  Then: (pattern: RegExp, fn: StepFn) => void;
-  And: (pattern: RegExp, fn: StepFn) => void;
-  But: (pattern: RegExp, fn: StepFn) => void;
+  Given: Given;
+  When: When;
+  Then: Then;
+  And: And;
+  But: But;
   steps: StepDef[];
 }
+
+// The shape every step file's default export must satisfy: a factory k6-gherkin's generated
+// script calls once at module load, passing in the Given/When/Then/And/But shared across all
+// step files in stepsDir. Step files never import k6-gherkin at runtime to get these — k6 only
+// resolves relative/absolute file paths, never bare node_modules specifiers, so there is no
+// runtime path back into this package from inside the k6 VM; injection is the only way in.
+export type StepModule = (Given: Given, When: When, Then: Then, And: And, But: But) => void;
 
 export function createRegistry(): StepRegistry {
   const steps: StepDef[] = [];
