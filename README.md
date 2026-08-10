@@ -6,6 +6,16 @@
 
 ---
 
+## Why does this exist?
+
+Most end-to-end tools double as load testers only on paper. Selenium, Cypress, and Playwright are built around driving a single browser session, so once you try to point them at load or performance testing, you hit the same walls: no clean way to parameterize virtual users, ramping stages, or thresholds, and reporting that's designed around one run's pass/fail rather than latency percentiles and throughput over time.
+
+k6 solves that from the other direction—it's built for performance testing first, with scriptable load profiles and reporting that actually answers "how does this behave under load?" That makes it a reasonable foundation for functional/e2e checks too, since a check is just a load test with one VU. The gap was Gherkin: k6 has no native way to run `.feature` files, and Gherkin is worth keeping around because it reads equally well to a non-technical stakeholder and to a test runner—one spec, two audiences, no translation layer.
+
+`k6-gherkin` fills that gap. Write your scenarios in plain Gherkin, back them with step definitions in JS/TS, and run the same spec as a functional smoke test or a full load test, with k6's native reporting either way.
+
+---
+
 ## Key Features
 
 - **True BDD Separation**: Write technology-agnostic `.feature` files in pure business language.
