@@ -14,25 +14,44 @@ export interface Scenario {
   steps: ScenarioStep[];
 }
 
-export function parseFeatures(dir: string): Scenario[] {
+export function parseFeatures(input: string): Scenario[] {
   const idGen = (() => { let n = 0; return () => `id-${++n}`; })();
   const parser = new Parser(new AstBuilder(idGen), new GherkinClassicTokenMatcher());
 
   const scenarios: Scenario[] = [];
-  if (!fs.existsSync(dir)) return scenarios;
+  if (!fs.existsSync(input)) return scenarios;
 
-  const files = fs.readdirSync(dir).filter(f => f.endsWith('.feature')).sort();
+  // Accept either a directory to scan for *.feature files (the normal case -
+  // a project's features/ dir) or a single .feature file directly.
+  const isDir = fs.statSync(input).isDirectory();
+  const dir = isDir ? input : path.dirname(input);
+  const files = isDir
+    ? fs.readdirSync(input).filter(f => f.endsWith('.feature')).sort()
+    : [path.basename(input)];
+
   for (const file of files) {
     const src = fs.readFileSync(path.join(dir, file), 'utf8');
     const doc = parser.parse(src);
     const featureName = (doc.feature && doc.feature.name) || 'Unknown Feature';
 
     const stepKeywords: Record<string, string> = {};
-    for (const child of (doc.feature && doc.feature.children) || []) {
-      const block = (child as any).scenario || (child as any).background;
-      if (!block) continue;
+    const indexSteps = (block: any) => {
       for (const step of block.steps || []) {
         stepKeywords[step.id] = step.keyword.trim();
+      }
+    };
+    for (const child of (doc.feature && doc.feature.children) || []) {
+      const c = child as any;
+      if (c.rule) {
+        // A Rule's own children (Background/Scenario) aren't at the top level
+        // of feature.children - they're nested one level deeper under `rule`.
+        for (const ruleChild of c.rule.children || []) {
+          const block = ruleChild.scenario || ruleChild.background;
+          if (block) indexSteps(block);
+        }
+      } else {
+        const block = c.scenario || c.background;
+        if (block) indexSteps(block);
       }
     }
 
