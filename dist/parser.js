@@ -57,24 +57,6 @@ function parseFeatures(dir) {
                 stepKeywords[step.id] = step.keyword.trim();
             }
         }
-        const dataTables = {};
-        const traverse = (node) => {
-            if (!node)
-                return;
-            if (node.steps) {
-                for (const s of node.steps) {
-                    if (s.dataTable) {
-                        dataTables[s.id] = s.dataTable.rows.map((row) => row.cells.map((cell) => cell.value));
-                    }
-                }
-            }
-            if (node.children) {
-                for (const child of node.children) {
-                    traverse(child.scenario || child.background || child.rule);
-                }
-            }
-        };
-        traverse(doc.feature);
         const pickles = (0, gherkin_1.compile)(doc, file, idGen);
         for (const pickle of pickles) {
             scenarios.push({
@@ -84,10 +66,17 @@ function parseFeatures(dir) {
                 // For a Scenario Outline, it has two: the step's own id and the Examples row's id that
                 // generated this pickle. Which one comes last is not guaranteed, so we look up against
                 // every id and take whichever one actually resolves, rather than assuming position.
+                //
+                // dataTable is read from the pickle step's OWN argument, not looked up via astNodeIds
+                // against the raw AST: the AST only has the source step's literal table (placeholders
+                // like `<status>` unresolved), while the pickle's argument is what `compile()` already
+                // substituted against this specific Examples row.
                 steps: pickle.steps.map(s => ({
                     text: s.text,
                     keyword: (s.astNodeIds && s.astNodeIds.map((id) => stepKeywords[id]).find((k) => k)) || '',
-                    dataTable: (s.astNodeIds && s.astNodeIds.map((id) => dataTables[id]).find((t) => t)) || null,
+                    dataTable: s.argument?.dataTable
+                        ? s.argument.dataTable.rows.map((row) => row.cells.map((cell) => cell.value))
+                        : null,
                 })),
             });
         }
