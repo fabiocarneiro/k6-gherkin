@@ -7,6 +7,10 @@
   "bin": {
     "k6-gherkin": "bin/cli.js"
   },
+  "files": [
+    "dist",
+    "bin"
+  ],
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
