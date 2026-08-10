@@ -1,6 +1,6 @@
 {
   "name": "k6-gherkin",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "description": "Unopinionated Gherkin BDD test runner and summary reporter for k6",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
