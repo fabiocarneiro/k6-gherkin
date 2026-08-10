@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as path from 'path';
-import { parseFeatures } from './parser';
+import { parseFeatures } from '../src/parser';
 
 const fixture = (name: string) => path.join(__dirname, '__fixtures__', name);
 
