@@ -6,7 +6,9 @@ export interface StepContext {
   client?: any;
   params?: any;
   currentStep?: string;
-  check?: (val: any, specs: Record<string, (val: any) => boolean>) => boolean;
+  // Not optional: the generated script's freshCtx() always sets this before any step function
+  // runs, so every step definition can call ctx.check(...) directly without a null check.
+  check: (val: any, specs: Record<string, (val: any) => boolean>) => boolean;
   expectedError?: string;
   lastError?: any;
   resources?: Record<string, any[]>;
