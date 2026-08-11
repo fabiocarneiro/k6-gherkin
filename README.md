@@ -110,7 +110,7 @@ Feature: Shopping Cart
 
 ────────────────────────────────────────────────────────────
 ✓ 3 checks: 3 passed
-✓ threshold: checks rate > 0.98
+✓ threshold: checks rate == 1
 ```
 
 ---

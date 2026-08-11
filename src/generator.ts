@@ -49,7 +49,7 @@ export function generateScript(scenarios: Scenario[], resources: Record<string, 
   const beforeScenario = options.beforeScenario || '';
   const afterScenario = options.afterScenario || '';
   const getScenarioContext = options.getScenarioContext || 'return {};';
-  const thresholds = options.thresholds || ["checks: ['rate > 0.98']"];
+  const thresholds = options.thresholds || ["checks: ['rate == 1']"];
 
   const byFeature = new Map<string, Scenario[]>();
   for (const scenario of scenarios) {
