@@ -8,11 +8,13 @@
 
 ## Why does this exist?
 
-Most end-to-end tools double as load testers only on paper. Selenium, Cypress, and Playwright are built around driving a single browser session, so once you try to point them at load or performance testing, you hit the same walls: no clean way to parameterize virtual users, ramping stages, or thresholds, and reporting that's designed around one run's pass/fail rather than latency percentiles and throughput over time.
+E2E tools like Selenium, Cypress, Playwright, and others are built to drive a single browser session, not to generate load—there's no clean way to parameterize virtual users or ramping stages, and their reporting is built for one run's pass/fail rather than latency and throughput over time. Macro-recording tools like JMeter get closer, since a recorded flow already looks like something a real user did, but every flow becomes its own script: test five similar journeys and you maintain five recordings with no shared vocabulary between them, each drifting out of sync in its own way.
 
-k6 solves that from the other direction—it's built for performance testing first, with scriptable load profiles and reporting that actually answers "how does this behave under load?" That makes it a reasonable foundation for functional/e2e checks too, since a check is just a load test with one VU. The gap was Gherkin: k6 has no native way to run `.feature` files, and Gherkin is worth keeping around because it reads equally well to a non-technical stakeholder and to a test runner—one spec, two audiences, no translation layer.
+That's the part Gherkin actually solves. Realistic load isn't hitting one endpoint as hard as possible—it's reproducing the paths real users take through the app, at scale. A Gherkin scenario describes that path as behavior, kept separate from both how it's automated (the step definitions) and how much load sits behind it (virtual users, ramp-up strategy). Write "user adds an item to their cart" once, reuse the same steps across scenarios, and change the load profile without touching the behavior being tested—something a one-off recording or script doesn't give you.
 
-`k6-gherkin` fills that gap. Write your scenarios in plain Gherkin, back them with step definitions in JS/TS, and run the same spec as a functional smoke test or a full load test, with k6's native reporting either way.
+k6 was built for performance testing first, with scriptable load profiles and reporting that actually answers "how does this behave under load?" A functional check is just a load test with one virtual user, so it's a solid foundation for e2e testing too—it just had no native way to run `.feature` files.
+
+That missing piece is what this fills: write scenarios in plain Gherkin, back them with step definitions in JS/TS, and run the same spec as a functional check or a full load test, with k6's native reporting either way. The result is a single tool for both performance and behavior testing, where `.feature` files double as living documentation—plain enough for the whole team to read, not just the engineers who automate it, and structured enough for AI tools to generate, extend, or reason over just as easily.
 
 ---
 
