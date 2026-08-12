@@ -2,7 +2,34 @@
  * Formats the k6 check results as a Gherkin-style summary tree.
  */
 
-export function handleSummary(data: any): Record<string, string> {
+// k6 doesn't ship types for its end-of-test summary object (the argument handleSummary receives).
+// This covers only the fields this module actually reads, not the full shape k6 produces.
+interface K6Check {
+  name: string;
+  passes: number;
+  fails: number;
+}
+
+interface K6Threshold {
+  ok: boolean;
+}
+
+interface K6SummaryData {
+  root_group?: {
+    checks?: K6Check[];
+  };
+  metrics?: {
+    checks?: {
+      values: {
+        passes?: number;
+        fails?: number;
+      };
+      thresholds?: Record<string, K6Threshold>;
+    };
+  };
+}
+
+export function handleSummary(data: K6SummaryData): Record<string, string> {
   const allChecks = (data.root_group && data.root_group.checks) || [];
   const SEP = ' | ';
 
@@ -60,7 +87,7 @@ export function handleSummary(data: any): Record<string, string> {
     out += '\n';
     if (cm.thresholds) {
       for (const [thr, result] of Object.entries(cm.thresholds)) {
-        out += ((result as any).ok ? '\u2713 ' : '\u2717 ') + 'threshold: checks ' + thr + '\n';
+        out += (result.ok ? '\u2713 ' : '\u2717 ') + 'threshold: checks ' + thr + '\n';
       }
     }
   }

@@ -23,7 +23,7 @@ export function discoverStepImports(stepsDir: string): { absPath: string; export
     });
 }
 
-export function generateScript(scenarios: Scenario[], resources: Record<string, any[]>, options: GeneratorOptions = {}): string {
+export function generateScript(scenarios: Scenario[], resources: Record<string, unknown[]>, options: GeneratorOptions = {}): string {
   const runnerPath = path.join(__dirname, 'step-runner.js');
   const summaryPath = path.join(__dirname, 'handle-summary.js');
   const registryPath = path.join(__dirname, 'step-registry.js');

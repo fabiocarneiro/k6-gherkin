@@ -1,4 +1,5 @@
 import { Parser, AstBuilder, GherkinClassicTokenMatcher, compile } from '@cucumber/gherkin';
+import { Background, Scenario as GherkinScenario } from '@cucumber/messages';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -35,22 +36,21 @@ export function parseFeatures(input: string): Scenario[] {
     const featureName = (doc.feature && doc.feature.name) || 'Unknown Feature';
 
     const stepKeywords: Record<string, string> = {};
-    const indexSteps = (block: any) => {
+    const indexSteps = (block: Background | GherkinScenario) => {
       for (const step of block.steps || []) {
         stepKeywords[step.id] = step.keyword.trim();
       }
     };
     for (const child of (doc.feature && doc.feature.children) || []) {
-      const c = child as any;
-      if (c.rule) {
+      if (child.rule) {
         // A Rule's own children (Background/Scenario) aren't at the top level
         // of feature.children - they're nested one level deeper under `rule`.
-        for (const ruleChild of c.rule.children || []) {
+        for (const ruleChild of child.rule.children || []) {
           const block = ruleChild.scenario || ruleChild.background;
           if (block) indexSteps(block);
         }
       } else {
-        const block = c.scenario || c.background;
+        const block = child.scenario || child.background;
         if (block) indexSteps(block);
       }
     }
@@ -73,7 +73,7 @@ export function parseFeatures(input: string): Scenario[] {
           text: s.text,
           keyword: (s.astNodeIds && s.astNodeIds.map((id) => stepKeywords[id]).find((k) => k)) || '',
           dataTable: s.argument?.dataTable
-            ? s.argument.dataTable.rows!.map((row: any) => row.cells!.map((cell: any) => cell.value))
+            ? s.argument.dataTable.rows.map(row => row.cells.map(cell => cell.value))
             : null,
         })),
       });

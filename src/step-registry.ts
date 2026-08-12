@@ -3,15 +3,22 @@
  */
 
 export interface StepContext {
-  client?: any;
-  params?: any;
+  client?: unknown;
+  params?: unknown;
   currentStep?: string;
   // Not optional: the generated script's freshCtx() always sets this before any step function
   // runs, so every step definition can call ctx.check(...) directly without a null check.
-  check: (val: any, specs: Record<string, (val: any) => boolean>) => boolean;
+  // Generic (rather than `any`) so a call site's val and its check predicates share one type,
+  // e.g. ctx.check(cartItems, { 'has 1 item': (items) => items.length === 1 }) infers `items`
+  // as the type of `cartItems` instead of losing it to `any`.
+  check: <VT>(val: VT, specs: Record<string, (val: VT) => boolean>) => boolean;
   expectedError?: string;
-  lastError?: any;
-  resources?: Record<string, any[]>;
+  lastError?: unknown;
+  resources?: Record<string, unknown[]>;
+  // Step definitions stash arbitrary scenario state here (ctx.userToken = '...', ctx.cartItems =
+  // [...]) - the whole point of this bag is that its shape is unknowable to the library, so the
+  // index signature stays `any` rather than `unknown`: `unknown` would force a cast at every read,
+  // defeating the free-form ctx pattern the README's own examples rely on.
   [key: string]: any;
 }
 

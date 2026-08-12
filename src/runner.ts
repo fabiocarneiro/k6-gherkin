@@ -5,7 +5,7 @@ import { generateScript, GeneratorOptions } from './generator';
 
 export interface RunK6Options extends GeneratorOptions {
   featuresDir?: string;
-  resources?: Record<string, any[]>;
+  resources?: Record<string, unknown[]>;
   k6Args?: string[];
   cwd?: string;
 }

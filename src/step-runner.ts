@@ -2,26 +2,39 @@
  * Async step executor for Gherkin scenarios in k6.
  */
 
-import { StepContext, StepDef } from './step-registry';
+import { StepContext, StepDef, StepFn } from './step-registry';
+import { ScenarioStep } from './parser';
 
-export async function runScenario(steps: any[], allStepDefs: StepDef[], ctx: StepContext): Promise<void> {
-  for (const step of steps) {
+// A caught step-fn error is inherently unknown at compile time (step definitions can throw
+// anything), but expectedError matching is a duck-typed convention: an error object carrying a
+// `status` and/or `message`. This is the minimal shape that convention relies on.
+interface StepError {
+  status?: string | number;
+  message?: string;
+}
+
+export async function runScenario(steps: (string | ScenarioStep)[], allStepDefs: StepDef[], ctx: StepContext): Promise<void> {
+  for (const raw of steps) {
+    // runScenario also accepts plain strings (not just parser-produced ScenarioStep objects), for
+    // callers that build their own step list instead of going through parseFeatures.
+    const step: ScenarioStep = typeof raw === 'string' ? { text: raw, keyword: '', dataTable: null } : raw;
     const keyword = step.keyword || '';
-    const text = step.text || step;
+    const text = step.text;
     ctx.currentStep = keyword ? keyword + ' ' + text : text;
     const match = findStep(allStepDefs, text);
     if (!match) {
       throw new Error(`No step definition matched: "${text}"`);
     }
-    const args = [...match.args];
+    const args: (string | string[][])[] = [...match.args];
     if (step.dataTable) {
       args.push(step.dataTable);
     }
     const checksBefore = ctx._checkCount || 0;
     try {
       await match.fn(ctx, ...args);
-    } catch (e: any) {
-      const statusName = e.status != null ? String(e.status) : null;
+    } catch (e: unknown) {
+      const err = (typeof e === 'object' && e !== null ? e : {}) as StepError;
+      const statusName = err.status != null ? String(err.status) : null;
       if (ctx.expectedError) {
         const expected = ctx.expectedError;
         if (statusName === expected) {
@@ -29,11 +42,11 @@ export async function runScenario(steps: any[], allStepDefs: StepDef[], ctx: Ste
           ctx.expectedError = undefined;
           ctx.check!(e, { [`received expected "${expected}" error`]: () => true });
         } else {
-          ctx.check!(null, { [`expected "${expected}" error but got "${statusName || e.message || e}"`]: () => false });
+          ctx.check!(null, { [`expected "${expected}" error but got "${statusName || err.message || String(e)}"`]: () => false });
           return;
         }
       } else {
-        ctx.check!(null, { [e.message || String(e)]: () => false });
+        ctx.check!(null, { [err.message || String(e)]: () => false });
         return;
       }
       continue;
@@ -48,7 +61,7 @@ export async function runScenario(steps: any[], allStepDefs: StepDef[], ctx: Ste
   }
 }
 
-function findStep(allStepDefs: StepDef[], text: string): { fn: Function; args: any[] } | null {
+function findStep(allStepDefs: StepDef[], text: string): { fn: StepFn; args: string[] } | null {
   for (const def of allStepDefs) {
     const m = text.match(def.pattern);
     if (m) {
