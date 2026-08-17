@@ -1,6 +1,6 @@
 # k6-gherkin
 
-> Unopinionated Gherkin BDD test runner and summary reporter for Grafana k6.
+> Gherkin BDD test runner and summary reporter for Grafana k6.
 
 `k6-gherkin` allows you to write living business specifications using standard **Gherkin** (`.feature` files) and execute them natively inside **k6** using your own custom JavaScript or TypeScript step definitions.
 
